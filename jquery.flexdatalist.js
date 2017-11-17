@@ -92,6 +92,8 @@ jQuery.fn.flexdatalist = function (_option, _value) {
     }
 
     var _options = $.extend({
+        dataSrc: null,
+        itemSrc: null,
         url: null,
         data: [],
         params: {},
@@ -187,7 +189,7 @@ jQuery.fn.flexdatalist = function (_option, _value) {
             window.onresize = function (event) {
                 _this.position();
             };
-            
+
             // Run garbage collector
             this.cache.gc();
 
@@ -308,7 +310,7 @@ jQuery.fn.flexdatalist = function (_option, _value) {
             inputWidth: function (event) {
                 var options = _this.options.get();
                 if (options.multiple) {
-                    var keyword = $alias.val(),                    
+                    var keyword = $alias.val(),
                         fontSize = parseInt($alias.css('fontSize').replace('px', '')),
                         minWidth = 40,
                         maxWidth = $this.innerWidth(),
@@ -337,7 +339,7 @@ jQuery.fn.flexdatalist = function (_option, _value) {
                 var val = _this.fvalue.get(),
                     keyword = $alias.val(),
                     options = _this.options.get();
-                
+
                 if (!options.multiple && options.selectionRequired && keyword.length <= options.minLength) {
                     _this.fvalue.clear();
                 }
@@ -373,7 +375,7 @@ jQuery.fn.flexdatalist = function (_option, _value) {
                 if ($this.attr('autofocus')) {
                     $alias.focus();
                 }
-                
+
                 $this.data('aliascontainer', ($multiple ? $multiple : $alias)).addClass('flexdatalist flexdatalist-set').css({
                     'position': 'absolute',
                     'top': -14000,
@@ -424,7 +426,7 @@ jQuery.fn.flexdatalist = function (_option, _value) {
                     .addClass('flexdatalist-multiple-value')
                     .append($alias)
                     .appendTo($multiple);
-                    
+
                 return $multiple;
             },
         /**
@@ -686,7 +688,7 @@ jQuery.fn.flexdatalist = function (_option, _value) {
                             args = [{value: data.value, text: data.text, action: action}, options];
 
                         $this.trigger('before:flexdatalist.toggle', args);
-                        
+
                         if (action === 'enable') {
                             var value = $li.data('value');
                             current.splice(index, 0, value);
@@ -1187,16 +1189,48 @@ jQuery.fn.flexdatalist = function (_option, _value) {
                         if (!_this.isEmpty(keywords)) {
                             matches = [];
                             var words = __this.split(keywords);
-                            for (var index = 0; index < data.length; index++) {
-                                var item = data[index];
-                                if (_this.isDup(item)) {
-                                    continue;
+
+                            if (options.dataSrc) {
+                                var levels = options.dataSrc.split('.');
+                                var source = data[0];
+                                levels.forEach(function (level, index, array) {
+                                    source = source[level];
+                                });
+
+                                for (var index = 0; index < source.length; index++) {
+
+                                    var item = null;
+
+                                    if(options.itemSrc){
+                                        item = source[index][options.itemSrc];
+                                    }
+                                    else{
+                                        item = source[index];
+                                    }
+
+                                    if (_this.isDup(item)) {
+                                        continue;
+                                    }
+                                    item = __this.matches(item, words);
+                                    if (item) {
+                                        matches.push(item);
+                                    }
                                 }
-                                item = __this.matches(item, words);
-                                if (item) {
-                                    matches.push(item);
+
+                            }
+                            else {
+                                for (var index = 0; index < data.length; index++) {
+                                    var item = data[index];
+                                    if (_this.isDup(item)) {
+                                        continue;
+                                    }
+                                    item = __this.matches(item, words);
+                                    if (item) {
+                                        matches.push(item);
+                                    }
                                 }
                             }
+
                         }
                         _this.cache.write(keywords, matches, 2);
                         $this.trigger('after:flexdatalist.search', [keywords, data, matches]);
@@ -1410,10 +1444,10 @@ jQuery.fn.flexdatalist = function (_option, _value) {
                 var $li = $('<li>').data('item', item).addClass('item'),
                     options = _this.options.get(),
                     visibleProperties = options.visibleProperties;
-                    
+
                 for (var index = 0; index < visibleProperties.length; index++) {
                     var visibleProperty = visibleProperties[index];
-                    
+
                     if (visibleProperty.indexOf('{') > -1) {
                         var str = _this.fvalue.placeholders.replace(item, visibleProperty),
                             parsed = _this.fvalue.placeholders.parse(visibleProperty);
@@ -1438,7 +1472,7 @@ jQuery.fn.flexdatalist = function (_option, _value) {
                                 .html(propertyText + ' ');
                         }
                     }
-                    
+
                     $item.appendTo($li);
                 }
                 return $li;
